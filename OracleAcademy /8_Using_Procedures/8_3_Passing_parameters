@@ -1,0 +1,95 @@
+-- 8.3 Passing Parameters
+
+--procedure
+CREATE OR REPLACE PROCEDURE find_area_pop
+  (
+    p_country_id IN wf_countries.country_id%TYPE,
+    p_country_name OUT wf_countries.country_name%TYPE,
+    p_country_population OUT wf_countries.population%TYPE
+  ) AS
+
+  BEGIN
+    SELECT country_name, population
+    INTO p_country_name, p_country_population
+    FROM wf_countries
+    WHERE country_id = p_country_id;
+    EXCEPTION 
+       WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('There is no country data available for a country with the ID ' || p_country_id);
+  END find_area_pop;
+
+  --invoking the procedure above and displaying the returned parameters
+
+--viewing out parameters in APEX
+  DECLARE
+    a_country_name wf_countries.country_name%TYPE;
+    a_country_population wf_countries.population%TYPE;
+  BEGIN
+    find_area_pop(2, a_country_name, a_country_population);
+     DBMS_OUTPUT.PUT_LINE('Country name: ' || a_country_name);
+     DBMS_OUTPUT.PUT_LINE('Country population: ' || a_country_population);
+  END;
+
+   DECLARE
+    a_country_name wf_countries.country_name%TYPE;
+    a_country_population wf_countries.population%TYPE;
+  BEGIN
+    find_area_pop(10, a_country_name, a_country_population);
+     DBMS_OUTPUT.PUT_LINE('Country name: ' || a_country_name);
+     DBMS_OUTPUT.PUT_LINE('Country population: ' || a_country_population);
+  END;
+
+  --Modified procedure, adding in additional OUT parameter
+
+  CREATE OR REPLACE PROCEDURE find_area_pop
+  (
+    p_country_id IN wf_countries.country_id%TYPE,
+    p_country_name OUT wf_countries.country_name%TYPE,
+    p_country_population OUT wf_countries.population%TYPE,
+    p_country_area OUT wf_countries.area%TYPE
+  ) AS
+    l_density NUMBER;
+  BEGIN
+    SELECT country_name, population, area
+    INTO p_country_name, p_country_population, p_country_area
+    FROM wf_countries
+    WHERE country_id = p_country_id;
+    l_density := p_country_population / p_country_area;
+    p_country_area := l_density;
+    EXCEPTION 
+       WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('There is no country data available for a country with the ID ' || p_country_id);
+  END find_area_pop;
+
+--invoking the procedure above and displaying the returned parameters
+--viewing out parameters in APEX
+
+  DECLARE
+    a_country_name wf_countries.country_name%TYPE;
+    a_country_population wf_countries.population%TYPE;
+    a_country_density wf_countries.area%TYPE;
+  BEGIN
+    find_area_pop(2, a_country_name, a_country_population, a_country_density);
+     DBMS_OUTPUT.PUT_LINE('Country name: ' || a_country_name);
+     DBMS_OUTPUT.PUT_LINE('Country population: ' || a_country_population);
+     DBMS_OUTPUT.PUT_LINE('Country density: ' || a_country_density);
+  END;
+
+  --procedure that returns the square of an integer
+
+  CREATE OR REPLACE PROCEDURE square_of_a_number(
+    p_number IN OUT NUMBER
+) AS
+l_calc NUMBER;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(p_number ||  ' * ' || p_number);
+    l_calc := p_number *p_number;
+    p_number := l_calc;
+END;
+
+DECLARE
+    l_result NUMBER := 4;
+BEGIN
+    square_of_a_number(l_result);
+    DBMS_OUTPUT.PUT_LINE('equals ' || l_result);
+END;
