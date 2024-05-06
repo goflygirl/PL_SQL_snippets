@@ -1,0 +1,69 @@
+-- 9.1 Creating Functions
+
+CREATE OR REPLACE FUNCTION get_full_name (p_last_name f_staffs.last_name%TYPE, p_first_name f_staffs.first_name%TYPE)
+RETURN varchar2 IS
+v_first_name f_staffs.first_name%TYPE := p_first_name;
+v_last_name f_staffs.last_name%TYPE := p_last_name;
+v_full_name VARCHAR2(150);
+BEGIN
+    v_full_name := v_last_name  || ', ' ||  v_first_name;
+    RETURN v_full_name; 
+END get_full_name;
+
+--invoking a function using anonymous block plus a local variable to store and display the returned value
+DECLARE
+    l_full_name VARCHAR2(150);
+BEGIN
+l_full_name := get_full_name('Smith', 'Joe');
+DBMS_OUTPUT.PUT_LINE(l_full_name);
+END;
+
+--invoking the function directly from within the DBMS_OUTPUT.PUT_LINE call
+BEGIN
+DBMS_OUTPUT.PUT_LINE(get_full_name('Smith', 'Joe'));
+END;
+
+--invoking the function from within a SELECT statement
+SELECT first_name, last_name, get_full_name(last_name, first_name) AS full_name
+FROM f_staffs;
+
+
+CREATE OR REPLACE FUNCTION divide(p_num1 IN NUMBER, p_num2 IN NUMBER)
+RETURN NUMBER
+IS
+v_result NUMBER;
+ BEGIN
+    v_result := ROUND(p_num1 / p_num2,2);
+    RETURN v_result;
+ END divide;
+
+
+ BEGIN
+ DBMS_OUTPUT.PUT_LINE(divide(50,2));
+ DBMS_OUTPUT.PUT_LINE(divide(25,3));
+ END;
+
+
+ CREATE OR REPLACE FUNCTION reverse_string(p_string IN VARCHAR2)
+RETURN VARCHAR2
+AS
+l_reversed_string VARCHAR(200) := '';
+i NUMBER;
+BEGIN
+    FOR i IN REVERSE 1..LENGTH(p_string)
+    LOOP
+        l_reversed_string := l_reversed_string || SUBSTR(p_string, i, 1);
+    END LOOP;
+RETURN l_reversed_string;
+END reverse_string; 
+
+--Testing the function
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(reverse_string('Ines'));
+END;
+
+SELECT ename, reverse_string(ename)
+FROM emp;
+
+SELECT country_name, reverse_string(country_name)
+FROM  wf_countries;

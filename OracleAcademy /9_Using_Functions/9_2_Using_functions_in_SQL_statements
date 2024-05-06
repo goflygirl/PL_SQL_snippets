@@ -1,0 +1,134 @@
+--9.2 Using functions in SQL statements
+
+SELECT * FROM
+f_emps;
+
+CREATE OR REPLACE FUNCTION sal_increase
+(p_salary f_emps.sal%TYPE,
+p_percent_incr NUMBER)
+RETURN NUMBER
+IS
+BEGIN
+RETURN (p_salary + (p_salary * p_percent_incr / 100));
+END;
+
+-- using function in SQL
+SELECT ename, sal, sal_increase(sal, 5)
+FROM f_emps;
+
+SELECT ename, sal, sal_increase(sal, 5)
+FROM f_emps
+WHERE sal_increase(sal,5) > 2000;
+
+--same result but without using a function above
+SELECT ename, 
+       sal, 
+       sal + (sal * 5 / 100) as sal_increase
+FROM f_emps
+WHERE sal + (sal * 5 / 100) >2000;
+
+SELECT ename, sal, sal_increase(sal, 5)
+FROM f_emps
+ORDER BY sal_increase(sal, 5) DESC;
+
+--Exercise
+SELECT deptno, sum(sal_increase(sal, 5))
+FROM f_emps
+GROUP BY deptno
+HAVING SUM(sal_increase(sal, 5)) > 2000;
+
+
+
+CREATE OR REPLACE FUNCTION check_dept
+(p_dept_id f_depts.deptno%TYPE)
+RETURN BOOLEAN IS
+v_dept_id f_depts.deptno%TYPE;
+BEGIN
+SELECT deptno INTO v_dept_id
+FROM f_depts
+WHERE deptno = p_dept_id;
+RETURN TRUE;
+EXCEPTION
+WHEN NO_DATA_FOUND THEN
+RETURN FALSE;
+END;
+
+/*
+Write a procedure called insert_emp which inserts a new employee into f_emps. 
+Pass the employee id, last name, salary, and department id to the procedure as IN parameters. 
+The procedure should call your check_dept function to verify that the passed department id exists in the f_depts table. 
+If it exists, insert the employee. If it does not exist, use DBMS_OUTPUT.PUT_LINE to display a suitable error message.*/
+
+CREATE OR REPLACE PROCEDURE insert_emp
+(p_empno IN f_emps.empno%TYPE,
+p_ename IN f_emps.ename%TYPE,
+p_sal IN f_emps.sal%TYPE,
+p_deptno IN f_emps.deptno%TYPE
+) AS
+l_deptno_status boolean;
+l_deptno f_emps.deptno%TYPE := p_deptno;
+
+-- Custom exception
+    no_dept_exists EXCEPTION;
+BEGIN
+
+    --to verify that the passed department id exists in the f_depts table
+    l_deptno_status := check_dept(l_deptno);
+    IF (l_deptno_status = FALSE) THEN
+        RAISE no_dept_exists;
+    ELSIF (l_deptno_status = TRUE) THEN
+        INSERT INTO f_emps(empno, ename, sal, deptno)
+        VALUES(p_empno, p_ename, p_sal, p_deptno);
+        DBMS_OUTPUT.PUT_LINE('Employee inserted successfully!');
+
+    END IF;
+    EXCEPTION 
+    WHEN no_dept_exists THEN
+    DBMS_OUTPUT.PUT_LINE('Error! This department does not exist!');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An error occurred: ' || SQLERRM);
+END;
+
+--Calling the procedure
+BEGIN
+    insert_emp(800, 'Jokinen', 5000, 750); --produces an error
+
+END;
+
+BEGIN
+    insert_emp(9998, 'APPLEBURRY', 4276, 20);
+END;
+
+/*Modify your insert_emp procedure so that if the department does not exist, 
+the procedure first inserts a new department with the non-existent department id and a department name of ‘Temporary’, 
+and then inserts the employee. 
+Test your procedure again with the same IN values used in the previous question.*/
+
+CREATE OR REPLACE PROCEDURE insert_emp
+(p_empno IN f_emps.empno%TYPE,
+p_ename IN f_emps.ename%TYPE,
+p_sal IN f_emps.sal%TYPE,
+p_deptno IN f_emps.deptno%TYPE
+) AS
+l_deptno_status boolean;
+
+BEGIN
+
+    l_deptno_status := check_dept(p_deptno);
+    IF (l_deptno_status = FALSE) THEN
+        INSERT INTO f_depts (deptno, dname)
+        VALUES(p_deptno, 'Temporary');
+        DBMS_OUTPUT.PUT_LINE('Created new temp department!');
+    END IF;
+    INSERT INTO f_emps(empno, ename, sal, deptno)
+        VALUES(p_empno, p_ename, p_sal, p_deptno);
+        DBMS_OUTPUT.PUT_LINE('Employee inserted successfully!');
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('An error occurred: ' || SQLERRM);
+END;
+
+--Calling the procedure
+BEGIN
+    insert_emp(800, 'Jokinen', 5000, 750); 
+END;
